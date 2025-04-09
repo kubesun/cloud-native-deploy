@@ -27,7 +27,30 @@ kubectl apply -f install.yaml -n argocd
 #kubectl patch svc argocd-server -n argocd -p '{"spec":{"type":"NodePort"}}'
 
 # Ingress: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/
+# tailscale Ingress, 需要先编辑
+kubectl edit svc -n argocd argocd-server
+# 添加 tailscale.com/expose: "true" 注解
+#metadata:
+#  annotations:
+#    tailscale.com/expose: "true"
 
+cat > argocd-ingress.yml <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: argocd
+spec:
+  defaultBackend:
+    service:
+      name: argocd-server
+      port:
+        number: 80
+  ingressClassName: tailscale
+EOF
+kubectl apply -f argocd-ingress.yml
+
+# default svc
 cat > argocd-server-svc.ymal <<EOF
 apiVersion: v1
 kind: Service

@@ -57,4 +57,4 @@ cilium install cilium cilium/cilium --namespace kube-system \
 cilium upgrade cilium/cilium \
 --namespace kube-system \
 --reuse-values \
---set bgpControlPlane.enabled=true \
+--set socketLB.hostNamespaceOnly=true \
