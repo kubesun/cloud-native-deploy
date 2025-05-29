@@ -5,7 +5,7 @@ set -o posix errexit -o pipefail
 mkdir -pv /home/kubernetes/longhorn
 cd /home/kubernetes/longhorn
 
-VERSION=v1.8.1
+VERSION=v1.9.0-rc3
 
 # https://github.com/longhorn/longhorn/releases
 wget https://raw.githubusercontent.com/longhorn/longhorn/$VERSION/deploy/longhorn.yaml
