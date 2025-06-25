@@ -1,0 +1,124 @@
+# vim values.yaml
+loki:
+  auth_enabled: false # 是否允许多租户,多租户需要配置很多参数
+  server:
+    log_level: debug # 日志级别,默认info
+  image:
+    registry: harbor.cuiliangblog.cn
+    repository: grafana/loki
+    tag: 3.4.2
+  commonConfig:
+    replication_factor: 1
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  # storage_config:
+  #   aws:
+  #     region: <AWS region your bucket is in, for example, `eu-west-2`>
+  #     bucketnames: <Your AWS bucket for chunk, for exaxmple,  `aws-loki-dev-chunk`>
+  #     s3forcepathstyle: false
+  pattern_ingester:
+    enabled: true
+  limits_config:
+    allow_structured_metadata: true
+    volume_enabled: true
+    retention_period: 672h # 28 days retention
+
+  storage:
+    type: s3
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
+    s3:
+      s3: s3://6IaVKn3db4Fgw0N0nT8y:kAZxpOXQKW2zeSEcQmLlza2G6TTTPvoJY2jVy8Vg@minio-service.single-minio.svc.cluster.local:9000/loki
+      endpoint: minio-service.single-minio.svc.cluster.local:9000
+      #region: null
+      secretAccessKey: kAZxpOXQKW2zeSEcQmLlza2G6TTTPvoJY2jVy8Vg
+      accessKeyId: 6IaVKn3db4Fgw0N0nT8y
+      #signatureVersion: null
+      s3ForcePathStyle: true
+      # Allows insecure (HTTP) connections (true/false)
+      insecure: true
+      # HTTP configuration settings
+      http_config: {}
+
+# Disable minio storage
+minio:
+  enabled: false
+
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+  persistence:
+    storageClass: longhorn
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+
+chunksCache:
+  # -- Specifies whether memcached based chunks-cache should be enabled
+  enabled: true # 高速缓存,根据机器实际来配置
+  # -- Batchsize for sending and receiving chunks from chunks cache
+  batchSize: 4
+  # -- Parallel threads for sending and receiving chunks from chunks cache
+  parallelism: 5
+  # -- Memcached operation timeout
+  timeout: 2000ms
+  # -- Specify how long cached chunks should be stored in the chunks-cache before being expired
+  defaultValidity: 0s
+  # -- Total number of chunks-cache replicas
+  replicas: 1 # 副本数量,根据机器实际来配置
+  # -- Port of the chunks-cache service
+  port: 11211
+  # -- Amount of memory allocated to chunks-cache for object storage (in MB).
+  #allocatedMemory: 8192
+  allocatedMemory: 2048 # 副本数量,根据机器实际来配置,默认需要8G内存
+  # -- Maximum item memory for chunks-cache (in MB).
+  maxItemMemory: 2 # 根据机器实际来配置,默认3
+  # 参数限制,根据机器实际来配置
+  resources:
+    requests:
+      memory: "2560Mi"      #
+      cpu: "500m"
+    limits:
+      memory: "2560Mi"
+  # -- Persistence settings for the chunks-cache
+  persistence:
+    # -- Enable creating PVCs for the chunks-cache
+    enabled: false
+    # -- Size of persistent disk, must be in G or Gi
+    storageSize: 10G
+
+# Zero out replica counts of other deployment modes
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+queryScheduler:
+  replicas: 0
+distributor:
+  replicas: 0
+compactor:
+  replicas: 0
+indexGateway:
+  replicas: 0
+bloomCompactor:
+  replicas: 0
+bloomGateway:
+  replicas: 0
