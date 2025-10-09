@@ -22,5 +22,11 @@ tar -zxvf operator-*.tgz
 helm install \
   --namespace minio-operator \
   --create-namespace \
-  minio-operator ./operator \
+  minio ./operator \
   -f ./operator/values.yaml
+
+# TLS TODO
+# https://www.minio.org.cn/docs/minio/kubernetes/upstream/operations/network-encryption.html#cas
+kubectl exec -it po/minio-operator-8479f6867d-twbkn -n minio-operator -- cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt > public.crt
+cat public.crt
+

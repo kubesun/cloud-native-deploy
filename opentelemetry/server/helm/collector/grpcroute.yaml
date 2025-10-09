@@ -1,0 +1,36 @@
+# otel-grpc-gateway.yaml - 示例 Gateway，监听 4317
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: otel-grpc-gateway
+  namespace: observability
+spec:
+  # 替换为您的 Gateway Controller Class 名称
+  gatewayClassName: acme-io-gateway-controller
+  listeners:
+    - name: otlp-grpc-tls
+#      protocol: HTTP # 推荐使用 HTTPS 协议以支持 gRPCs 加密
+      protocol: HTTP # HTTP 协议
+      port: 4317
+#      tls:
+#        mode: Terminate
+#        certificateRefs:
+#          # 请替换为您的 TLS 证书 Secret 名称和命名空间
+#          - kind: Secret
+#            name: otel-grpc-tls-secret
+---
+# collector-otlp-grpc-route.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: center-collector-grpc-route
+  namespace: observability
+spec:
+  parentRefs:
+    - name: otel-grpc-gateway # 绑定到上面定义的 Gateway
+  hostnames:
+    - "otel-grpc.data.com" # 客户端将连接的域名
+  rules:
+    - backendRefs:
+        - name: center-collector # OTLP Collector Service 名称
+          port: 4317             # OTLP gRPC 端口

@@ -1,0 +1,40 @@
+# jaeger-gateway.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: jaeger-query-gateway
+  namespace: observability
+spec:
+  addresses:
+    - type: IPAddress
+      value: 192.168.3.107
+  # **替换成你集群中实际安装的 Gateway Controller Class 名称** (例如: cilium, istio, nginx)
+  gatewayClassName: cilium
+  listeners:
+    - name: jaeger-http
+      protocol: HTTP
+      port: 16686 # 使用HTTP 端口暴露 Jaeger Web UI
+      # allowedRoutes:
+      #   namespaces:
+      #     from: Same
+---
+# jaeger-query-httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jaeger-query-route
+  namespace: observability
+spec:
+  parentRefs:
+    - name: jaeger-query-gateway # 绑定到上面创建的 Gateway
+  hostnames:
+    - "jaeger.app.com" # <-- 替换成你希望访问 Jaeger UI 的域名
+  rules:
+    - matches:
+        # 将所有路径 (/) 的流量进行转发
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: jaeger-query # Jaeger Query Service 名称
+          port: 16686      # 路由到 Jaeger Web UI 的端口

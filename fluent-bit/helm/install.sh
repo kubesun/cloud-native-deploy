@@ -1,0 +1,117 @@
+#!/bin/bash
+set -x
+
+helm repo add fluent https://fluent.github.io/helm-charts
+helm repo update
+
+mkdir /home/kubernetes/fluentbit/
+cd /home/kubernetes/fluentbit/
+
+helm pull fluent/fluent-bit
+tar -zxvf fluent-bit*.tgz
+
+# https://docs.fluentbit.io/manual/data-pipeline/outputs/opentelemetry
+cat > add-otel-fluent-bit-values.yml <<'EOF'
+config:
+  service: |
+    [SERVICE]
+        Daemon Off
+        Flush {{ .Values.flush }}
+        Log_Level {{ .Values.logLevel }}
+        Parsers_File /fluent-bit/etc/parsers.conf
+        Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+        HTTP_Server On
+        HTTP_Listen 0.0.0.0
+        HTTP_Port {{ .Values.metricsPort }}
+        Health_Check On
+
+    ## https://docs.fluentbit.io/manual/pipeline/inputs
+  inputs: |
+    [INPUT]
+        Name                 node_exporter_metrics
+        Tag                  node_metrics
+        Scrape_interval      2
+
+    [INPUT]
+        Name tail
+        Path /var/log/containers/*.log
+        multiline.parser docker, cri
+        Tag kube.*
+        Mem_Buf_Limit 5MB
+        Skip_Long_Lines On
+
+    [INPUT]
+        Name systemd
+        Tag host.*
+        Systemd_Filter _SYSTEMD_UNIT=kubelet.service
+        Read_From_Tail On
+
+    [INPUT]
+        Name                 dummy
+        Tag                  dummy.log
+        Rate                 3
+
+    ## https://docs.fluentbit.io/manual/pipeline/filters
+  filters: |
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Merge_Log On
+        Keep_Log Off
+        K8S-Logging.Parser On
+        K8S-Logging.Exclude On
+
+    ## https://docs.fluentbit.io/manual/pipeline/outputs
+  outputs: |
+    # Loki: 专用于发送 K8s 容器日志
+    [OUTPUT]
+        Name                 loki
+        Match                kube.*
+        Host                 loki.observability.svc.cluster.local
+        Port                 3100
+        # FIX: Use Record Accessor syntax ($kubernetes['...']) for metadata
+        Label_keys           $kubernetes['pod_name'], $kubernetes['namespace_name'], $kubernetes['container_name']
+        Line_format          json
+        # 静态标签：可以根据需要添加
+        Labels               job=kube-logs
+        Buffer_Size          1MB
+        Retry_Limit          5
+        Tls                  Off
+
+    # OpenTelemetry: 专用于发送指标、追踪和系统日志
+    [OUTPUT]
+        Name                 opentelemetry
+        Match                node_metrics, host.*, dummy.log
+        Host                 contrib-collector.observability.svc.cluster.local
+        Port                 4318
+        Metrics_uri          /v1/metrics
+        Logs_uri             /v1/logs
+        Traces_uri           /v1/traces
+        Tls                  Off
+        Tls.verify           Off
+        add_label            app fluent-bit
+        add_label            color blue
+        logs_body_key $message
+        logs_span_id_message_key span_id
+        logs_trace_id_message_key trace_id
+        logs_severity_text_message_key loglevel
+        logs_severity_number_message_key lognum
+
+EOF
+
+cat > image.yml <<EOF
+image:
+  #repository: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/fluent/fluent-bit
+  repository: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/fluent/fluent-bit
+  tag: 4.0.7-linuxarm64
+  digest:
+  pullPolicy: IfNotPresent
+EOF
+
+helm upgrade --install fluent-bit ./fluent-bit \
+  --create-namespace \
+  -n fluent-bit \
+  -f add-otel-fluent-bit-values.yml \
+  -f image.yml
+
+set +x

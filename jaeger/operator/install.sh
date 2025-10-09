@@ -18,6 +18,11 @@ apiVersion: jaegertracing.io/v1
 kind: Jaeger
 metadata:
   name: jaeger
+  annotations:
+    # 指示 Cilium 忽略对这个 Pod 的所有策略强制执行。
+    # ⚠️ 注意: 仅用于测试和 Webhook 场景，生产环境需谨慎使用。
+    cilium.io/proxy-visibility: "<all>"
+    cilium.io/proxy-ignore-checks: "true"
 spec:
   strategy: production
   collector:

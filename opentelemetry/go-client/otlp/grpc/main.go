@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 	"log"
 	"time"
+
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -13,14 +14,18 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
+// 4317:30474/TCP
+// 4318:32719/TCP
+// 修改为你的 OTEL Collector gRPC地址和端口
+const endpoint = "192.168.3.108:4317"
+
 func initTracer() func(context.Context) error {
 	// 创建 OTLP gRPC 导出器
 	exporter, err := otlptrace.New(
 		context.Background(),
 		otlptracegrpc.NewClient(
 			otlptracegrpc.WithInsecure(),
-			// otlptracegrpc.WithEndpoint("node5.apikv.com:30288"), // 修改为你的 OTEL Collector 地址和端口
-			otlptracegrpc.WithEndpoint("192.168.3.128:4317"), // 修改为你的 OTEL Collector 地址和端口
+			otlptracegrpc.WithEndpoint(endpoint),
 		),
 	)
 	if err != nil {
@@ -30,7 +35,7 @@ func initTracer() func(context.Context) error {
 	// 创建资源
 	resources := resource.NewWithAttributes(
 		semconv.SchemaURL,
-		semconv.ServiceNameKey.String("my-service2"),
+		semconv.ServiceNameKey.String("my-service"),
 	)
 
 	// 创建 TracerProvider

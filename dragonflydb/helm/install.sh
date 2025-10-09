@@ -4,10 +4,10 @@ set -o posix errexit -o pipefail
 
 # https://github.com/dragonflydb/dragonfly/tree/main/contrib/charts/dragonfly
 
-# VERSION=v1.26.1
+# VERSION=v1.34.1
 #helm upgrade --install dragonfly oci://ghcr.io/dragonflydb/dragonfly/helm/dragonfly--version $VERSION
 
-VERSION=v1.27.1
+VERSION=v1.34.1
 helm pull oci://ghcr.io/dragonflydb/dragonfly/helm/dragonfly --version $VERSION
 
 tar -zxvf dragonfly-$VERSION.tgz
@@ -29,7 +29,7 @@ image:
   repository: docker.dragonflydb.io/dragonflydb/dragonfly
 service:
   # -- Service type to provision. Can be NodePort, ClusterIP or LoadBalancer
-  type: NodePort
+  type: LoadBalancer
   port: 6379
 serviceMonitor:
   # -- If true, a ServiceMonitor CRD is created for a prometheus operator
@@ -113,7 +113,10 @@ helm install dragonfly ./dragonfly \
 # 正式安装
 helm uninstall dragonfly -n dragonfly || true
 helm install dragonfly ./dragonfly \
+-f ./dragonfly/values.yaml \
   -f dragonfly-values.yaml \
   --version $VERSION \
   --create-namespace \
-  -n dragonfly
+  -n dragonfly \
+  --set image.repository=ccr.ccs.tencentyun.com/sumery/dragonfly \
+  --set image.pullPolicy=Always

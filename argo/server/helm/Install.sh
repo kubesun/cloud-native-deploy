@@ -7,38 +7,35 @@ set -o posix errexit -o pipefail
 mkdir -pv /home/kubernetes/argocd
 cd /home/kubernetes/argocd
 
+#git clone --depth 1 https://github.com/argoproj/argo-helm.git
 helm repo add argo https://argoproj.github.io/argo-helm
-helm upgrade \
---install argo \
-argo-cd-6.7.18.tgz \
--f values.yaml \
--n cd \
---create-namespace
+helm pull argo/argo-cd
+tar -zxvf argo-cd-*.tgz
 
-cat > values.yaml <<EOF
-redis-ha:
-  enabled: true
-
+cat > new-values.yaml <<EOF
 controller:
   replicas: 1
 
 server:
+  ## Argo CD server Horizontal Pod Autoscaler
   autoscaling:
-    enabled: true
+    enabled: false
     minReplicas: 2
 
 repoServer:
   autoscaling:
-    enabled: true
+    enabled: false
     minReplicas: 2
 
 applicationSet:
-  replicas: 2
+  replicas: 1
 
 server:
-  replicas: 2
+  replicas: 1
+  service:
+    type: LoadBalancer
   ingress:
-    enabled: true
+    enabled: false
     ingressClassName: nginx
     annotations:
       nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -49,3 +46,10 @@ server:
 #        # Based on the ingress controller used secret might be optional
 #        secretName: wildcard-tls
 EOF
+
+helm upgrade --install argocd \
+./argo-cd \
+-n argocd \
+--create-namespace \
+-f new-values.yaml
+

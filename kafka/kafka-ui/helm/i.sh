@@ -28,7 +28,6 @@ EOF
 
 # 使用自定义的配置覆盖原有的配置文件
 helm upgrade --install kafka-ui . \
--f values.yaml \
 -f kafka-ui-values.yml \
 --create-namespace \
 -n kafka

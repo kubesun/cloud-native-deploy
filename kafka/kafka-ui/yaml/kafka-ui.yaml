@@ -8,7 +8,7 @@ metadata:
     app: kafka-ui
   annotations:
     deployment.kubernetes.io/revision: '3'
-    kubesphere.io/alias-name: kafka管理页面
+#    kubesphere.io/alias-name: kafka管理页面
 spec:
   replicas: 1
   selector:

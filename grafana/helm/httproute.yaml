@@ -1,0 +1,43 @@
+# grafana-gateway.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: observability-web-gateway
+  namespace: observability # 保持与 Service 相同的命名空间
+spec:
+  addresses:
+    - type: IPAddress
+      value: 192.168.3.110
+  gatewayClassName: cilium
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 3000 # 监听标准的 HTTP 端口
+      # allowedRoutes:
+      #   namespaces:
+      #     from: Same
+---
+# grafana-httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana-route
+  namespace: observability
+spec:
+  parentRefs:
+    - name: observability-web-gateway # 绑定到上面创建的 Gateway
+  hostnames:
+    - "grafana.app.com" # <-- 替换成你希望访问 Grafana 的域名
+  rules:
+    - matches:
+        # 匹配所有路径 (/)，将流量转发给 Grafana UI
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: grafana # Grafana Service 的名称
+          port: 80      # 路由到 Grafana Service 的端口
+
+# kubectl get gateway -n observability
+# kubectl get httproute -n observability
+# http://grafana.app.com:15580

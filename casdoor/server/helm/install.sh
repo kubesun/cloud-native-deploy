@@ -24,9 +24,9 @@ kubectl create ns casdoor
 # 外部数据库的配置: https://github.com/casdoor/casdoor-helm/blob/master/charts/casdoor/values.yaml
 #wget -O config.yaml https://raw.githubusercontent.com/casdoor/casdoor-helm/master/charts/casdoor/values.yaml
 
-user="postgres"
 host="postgres-postgresql.postgres.svc.cluster.local"
-password="postgres"
+user="postgres"
+password="msdnmm"
 driver="postgres"
 port=5432
 databaseName="casdoor"

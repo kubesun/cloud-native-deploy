@@ -39,16 +39,16 @@ ui:
   service:
     enable: true
     #    type: LoadBalancer
-    type: NodePort
+    type: LoadBalancer
     port:
       http: 80
       https: 443
-    nodePort:
-      http: 31080
-      https: 31443
+#    nodePort:
+#      http: 31080
+#      https: 31443
   # Enables displaying metrics in the Consul UI.
   metrics:
-    enabled: false
+    enabled: true
     # The metrics provider specification.
     provider: "prometheus"
     # The URL of the prometheus metrics server.
@@ -58,7 +58,7 @@ server:
   enable: true
   affinity: "" # 允许每个节点上运行更多的Pod
   storage: '3Gi' # 定义用于配置服务器的 StatefulSet 存储的磁盘大小
-  #storageClass: "local-path" # 使用Kubernetes集群的默认 StorageClass 用于服务器的 StatefulSet 存储的 StorageClass。如果要自动创建存储，则必须能够动态预配它。例如，要使用 local（ https://kubernetes.io/docs/concepts/storage/storage-classes/#local） 存储类，需要手动创建 PersistentVolumeClaims。值 null 将使用 Kubernetes 集群的默认 StorageClass。如果默认 StorageClass 不存在，则需要创建一个。请参阅服务器性能要求文档的读/写调整部分，了解有关选择高性能存储类的注意事项
+  storageClass: "openebs-lvm-consul" # 使用Kubernetes集群的默认 StorageClass 用于服务器的 StatefulSet 存储的 StorageClass。如果要自动创建存储，则必须能够动态预配它。例如，要使用 local（ https://kubernetes.io/docs/concepts/storage/storage-classes/#local） 存储类，需要手动创建 PersistentVolumeClaims。值 null 将使用 Kubernetes 集群的默认 StorageClass。如果默认 StorageClass 不存在，则需要创建一个。请参阅服务器性能要求文档的读/写调整部分，了解有关选择高性能存储类的注意事项
   exposeService:
     enabled: true
     type: LoadBalancer
@@ -84,8 +84,7 @@ server:
   replicas: 1 # 要运行的服务器的数量，即集群数
 EOF
 
-helm install consul ./consul \
+helm upgrade --install consul ./consul \
   --create-namespace \
-  -f ./consul/values.yaml \
-  -f consul-values.yaml \
-  --namespace consul
+  -n consul \
+  -f consul-values.yaml

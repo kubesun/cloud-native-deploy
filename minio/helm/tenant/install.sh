@@ -11,36 +11,55 @@ cd /home/kubernetes/minio
 helm search repo minio/tenant
 helm pull minio/tenant
 tar -zxvf tenant-*.tgz
-cd tenant
 
 # 修改values.yaml, 推荐修改pools.servers与pools.size和configSecret
-# vi values.yaml
+# vi values.yaml Minio推荐使用分布式的SC
+cat > new-values.yml <<EOF
+tenant:
+  pools:
+    ###
+    # The number of MinIO Tenant Pods / Servers in this pool.
+    # For standalone mode, supply 1. For distributed mode, supply 4 or more.
+    # Note that the operator does not support upgrading from standalone to distributed mode.
+    - servers: 1
+      ###
+      # Custom name for the pool
+      name: pool-0
+      ###
+      # The number of volumes attached per MinIO Tenant Pod / Server.
+      volumesPerServer: 1
+      ###
+      # The capacity per volume requested per MinIO Tenant Pod.
+      size: 10Gi
+      ###
+      # The `storageClass <https://kubernetes.io/docs/concepts/storage/storage-classes/>`__ to associate with volumes generated for this pool.
+      #
+      # If using Amazon Elastic Block Store (EBS) CSI driver
+      # Please make sure to set xfs for "csi.storage.k8s.io/fstype" parameter under StorageClass.parameters.
+      # Docs: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/parameters.md
+      storageClassName: openebs-lvmpv
+EOF
 
 # 全新安装
-helm install tenant . \
+helm upgrade --install tenant ./tenant \
   --create-namespace  \
-  --namespace minio-tenant \
-  -f values.yaml
+  --namespace minio \
+  -f new-values.yml
 
-# 更新安装
-#helm upgrade tenant . \
-#  --namespace minio-tenant \
-#  -f values.yaml
-
-kubectl get po -n minio-tenant -owide
-kubectl get svc -n minio-tenant
+kubectl get po -n minio -owide
+kubectl get svc -n minio
 
 # 获取账户密码
-kubectl get secrets -n minio-tenant \
+kubectl get secrets -n minio \
 myminio-env-configuration \
 -ojsonpath='{.data.config\.env}' | base64 -d
 
 svc_type="NodePort"
 #SVC_TYPE="LoadBalancer"
-kubectl patch svc myminio-console -n minio-tenant -p '{"spec":{"type":"NodePort"}}'
+kubectl patch svc myminio-console -n minio -p '{"spec":{"type":"NodePort"}}'
 
-kubectl get svc/myminio-hl -n minio-tenant -o yaml > myminio-hl-svc.yaml.back
-kubectl delete svc myminio-hl -n minio-tenant
+kubectl get svc/myminio-hl -n minio -o yaml > myminio-hl-svc.yaml.back
+kubectl delete svc myminio-hl -n minio
 
 cat > myminio-hl-svc.yaml <<EOF
 apiVersion: v1
@@ -49,7 +68,7 @@ metadata:
   labels:
     v1.min.io/tenant: myminio
   name: myminio-hl
-  namespace: minio-tenant
+  namespace: minio
 spec:
   ports:
   - name: https-minio
@@ -62,3 +81,6 @@ spec:
   type: $svc_type
 EOF
 kubectl apply -f myminio-hl-svc.yaml
+
+# 自动TLS， 使用k8s dns：https://minio.minio.svc.cluster.local
+# 完整文档：https://docs.min.io/community/minio-object-store/operations/network-encryption.html#minio-tls-kubernetes
