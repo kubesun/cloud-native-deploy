@@ -15,7 +15,7 @@ mv ./argocd-${OS}-${ARCH} /usr/local/bin/argocd
 # 使用 CLI 登录
 argocd admin initial-password -n argocd
 # hv0uqcQpbwGhsiwN
-PASSWORLD="hv0uqcQpbwGhsiwN"
+PASSWORLD="0WOLHw-nJgkpfOGb"
 
 # 登录, port为argocd-server的80端口
 # 默认的账号是admin

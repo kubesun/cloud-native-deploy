@@ -15,7 +15,7 @@ import (
 
 // OTel Collector 的 OTLP/HTTP 接收器地址
 // 通常，OTLP HTTP 的默认端口是 4318
-const otelHttpEndpoint = "192.168.3.108:4318"
+const otelHttpEndpoint = "192.168.3.104:4318"
 
 // initTracerProvider 用于初始化并配置一个 Tracer Provider
 // 它负责将追踪数据通过 OTLP/HTTP 导出

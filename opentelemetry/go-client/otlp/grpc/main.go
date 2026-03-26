@@ -17,7 +17,7 @@ import (
 // 4317:30474/TCP
 // 4318:32719/TCP
 // 修改为你的 OTEL Collector gRPC地址和端口
-const endpoint = "192.168.3.108:4317"
+const endpoint = "192.168.3.104:4317"
 
 func initTracer() func(context.Context) error {
 	// 创建 OTLP gRPC 导出器

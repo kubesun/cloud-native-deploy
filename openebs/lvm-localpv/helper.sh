@@ -3,7 +3,7 @@ set -x
 
 vgs
 
-sudo losetup -f /openebs-lvm-disk.img --show
+sudo losetup -f /openebs-lvm-pool.img --show
 
 lvdisplay
 

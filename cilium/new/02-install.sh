@@ -58,3 +58,6 @@ cilium upgrade cilium/cilium \
 --namespace kube-system \
 --reuse-values \
 --set socketLB.hostNamespaceOnly=true \
+
+	 --set ingressController.service.externalTrafficPolicy=Local
+	 --set gatewayAPI.externalTrafficPolicy=Local
